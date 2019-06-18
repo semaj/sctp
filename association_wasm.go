@@ -1,4 +1,4 @@
-// +build !wasm,!js
+// +build js,wasm
 
 package sctp
 
@@ -8,7 +8,6 @@ import (
 	"io"
 	"math"
 	"math/rand"
-	"net"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -106,8 +105,7 @@ func getAssociationStateString(a uint32) string {
 type Association struct {
 	lock sync.RWMutex
 
-    addr *net.UDPAddr
-	netConn *net.UDPConn
+	netConn *CatalystConn
 
 	peerVerificationTag      uint32
 	myVerificationTag        uint32
@@ -181,7 +179,7 @@ type Association struct {
 // Config collects the arguments to createAssociation construction into
 // a single structure
 type Config struct {
-	NetConn       *net.UDPConn
+	NetConn       *CatalystConn
 	LoggerFactory logging.LoggerFactory
 }
 
@@ -274,7 +272,7 @@ func (a *Association) init(isClient bool) {
 	defer a.lock.Unlock()
 
 	go a.readLoop()
-	go a.writeLoop(isClient)
+	go a.writeLoop()
 
 	if isClient {
 		a.setState(cookieWait)
@@ -395,8 +393,7 @@ func (a *Association) readLoop() {
 		buffer := make([]byte, receiveMTU)
 
 
-		n, addr, err := a.netConn.ReadFromUDP(buffer)
-        a.addr = addr
+		n, err := a.netConn.Read(buffer)
         //a.log.Debugf("[%s] RemoteAddr %s", a.name(), a.netConn.RemoteAddr().String())
 		if err != nil {
 			closeErr = err
@@ -411,7 +408,7 @@ func (a *Association) readLoop() {
 	a.log.Debugf("[%s] readLoop exited", a.name())
 }
 
-func (a *Association) writeLoop(isClient bool) {
+func (a *Association) writeLoop() {
 	a.log.Debugf("[%s] writeLoop entered", a.name())
 
 loop:
@@ -419,12 +416,7 @@ loop:
 		rawPackets := a.gatherOutbound()
 
 		for _, raw := range rawPackets {
-            var err error
-            if isClient {
-              _, err = a.netConn.Write(raw)
-            } else {
-              _, err = a.netConn.WriteTo(raw, a.addr)
-            }
+            _, err := a.netConn.Write(raw)
 			if err != nil {
 				if err != io.EOF {
 					a.log.Warnf("[%s] failed to write packets on netConn: %v", a.name(), err)
