@@ -12,6 +12,7 @@ import (
 type CatalystConn struct {
 	packetChan chan []byte
 	domUDP     js.Value
+    domUDPProxy     js.Value
 	addr       net.Addr
 }
 
@@ -21,7 +22,7 @@ func (c *CatalystConn) Write(p []byte) (int, error) {
     for i, b := range p {
       ui8[i] = b
     }
-    c.domUDP.Call("send", js.TypedArrayOf(ui8).Value)
+    c.domUDPProxy.Call("send", js.TypedArrayOf(ui8).Value)
     return 1, nil
 }
 
@@ -73,14 +74,16 @@ func (c *CatalystConn) SetWriteDeadline(t time.Time) error {
 func NewCatalystConn(addr net.Addr) *CatalystConn {
 	packetChan := make(chan []byte, 100)
 	domUDP := js.Global().Get("document").Get("udp")
+    domUDPProxy := js.Global().Get("document").Get("udp")
 
 	conn := &CatalystConn{
 		packetChan: packetChan,
 		domUDP:     domUDP,
+        domUDPProxy:     domUDPProxy,
 		addr:       addr,
 	}
     enqueue := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-        int8arrayWrapper := js.Global().Get("Int8Array").New(args[0].Get("data"))
+        int8arrayWrapper := js.Global().Get("Uint8Array").New(args[0].Get("data"))
         value := make([]byte, int8arrayWrapper.Get("byteLength").Int())
         a := js.TypedArrayOf(value)
         a.Call("set", int8arrayWrapper)
