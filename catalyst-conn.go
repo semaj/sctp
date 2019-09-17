@@ -17,7 +17,6 @@ type CatalystConn struct {
 }
 
 func (c *CatalystConn) Write(p []byte) (int, error) {
-    fmt.Println("CATALYSTCONN WRITING")
     ui8 := make([]uint8, len(p))
     for i, b := range p {
       ui8[i] = b
@@ -31,14 +30,12 @@ func (c *CatalystConn) WriteTo(p []byte, _ net.Addr) (int, error) {
 }
 
 func (c *CatalystConn) Read(p []byte) (n int, err error) {
-  fmt.Println("CATALYSTCONN READING")
   recvd := <-c.packetChan
   copied := copy(p, recvd)
   return copied, nil
 }
 
 func (c *CatalystConn) ReadFrom(p []byte) (n int, _ net.Addr, err error) {
-    fmt.Println("CATALYSTCONN READING")
 	recvd := <-c.packetChan
 	copied := copy(p, recvd)
 	return copied, c.addr, nil
@@ -73,7 +70,7 @@ func (c *CatalystConn) SetWriteDeadline(t time.Time) error {
 
 func NewCatalystConn(addr net.Addr) *CatalystConn {
 	packetChan := make(chan []byte, 100)
-	domUDP := js.Global().Get("document").Get("udp")
+	domUDP := js.Global().Get("document").Get("realUdp")
     domUDPProxy := js.Global().Get("document").Get("udp")
 
 	conn := &CatalystConn{

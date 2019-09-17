@@ -98,7 +98,8 @@ func (s *Stream) ReadSCTP(p []byte) (int, PayloadProtocolIdentifier, error) {
 
 		err = s.readErr
 		if err != nil {
-			return 0, PayloadProtocolIdentifier(0), err
+          panic(err)
+			//return 0, PayloadProtocolIdentifier(0), err
 		}
 
 		s.readNotifier.Wait()
