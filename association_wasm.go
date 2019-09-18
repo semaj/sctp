@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	receiveMTU           uint32 = 16384 // MTU for inbound packet (from DTLS)
-	initialMTU           uint32 = 16384 // initial MTU for outgoing packets (to DTLS)
-	maxReceiveBufferSize uint32 = 16384
+	receiveMTU           uint32 = 8192 // MTU for inbound packet (from DTLS)
+	initialMTU           uint32 = 1228 // initial MTU for outgoing packets (to DTLS)
+	maxReceiveBufferSize uint32 = 64 * 1024
 	commonHeaderSize     uint32 = 12
 	dataChunkHeaderSize  uint32 = 16
 )
