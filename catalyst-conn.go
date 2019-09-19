@@ -21,7 +21,9 @@ func (c *CatalystConn) Write(p []byte) (int, error) {
     for i, b := range p {
       ui8[i] = b
     }
-    c.domUDPProxy.Call("send", js.TypedArrayOf(ui8).Value)
+    jsArray := js.Global().Get("Uint8Array").New(len(ui8))
+    js.CopyBytesToJS(jsArray, ui8)
+    c.domUDPProxy.Call("send", jsArray)
     return 1, nil
 }
 
@@ -82,9 +84,10 @@ func NewCatalystConn(addr net.Addr) *CatalystConn {
     enqueue := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
         int8arrayWrapper := js.Global().Get("Uint8Array").New(args[0].Get("data"))
         value := make([]byte, int8arrayWrapper.Get("byteLength").Int())
-        a := js.TypedArrayOf(value)
-        a.Call("set", int8arrayWrapper)
-        a.Release()
+        js.CopyBytesToGo(value, int8arrayWrapper);
+        //a := js.TypedArrayOf(value)
+        //a.Call("set", int8arrayWrapper)
+        //a.Release()
         packetChan <-value
         return nil
 	})
